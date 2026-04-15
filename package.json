@@ -9,15 +9,25 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "test": "jest"
   },
-  "keywords": ["cli", "skills", "claude", "codex", "openclaw"],
+  "keywords": [
+    "cli",
+    "skills",
+    "claude",
+    "codex",
+    "openclaw"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
     "commander": "^14.0.3",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^6.0.2"
   },
   "dependencies": {
