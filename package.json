@@ -20,7 +20,7 @@
     "openclaw"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@types/jest": "^30.0.0",
