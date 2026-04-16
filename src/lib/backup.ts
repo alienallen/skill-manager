@@ -3,7 +3,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { Operation } from '../types/skill';
 import { TRASH_DIR, SKILL_MANAGER_DIR, getSymlinkTargets } from './paths';
-import { addOperation, loadIndex, saveIndex, loadOperations } from './store';
+import { addOperation, loadIndex, saveIndex, loadOperations, saveOperations } from './store';
 
 export function ensureTrashDir(): void {
   if (!fs.existsSync(TRASH_DIR)) {
@@ -49,13 +49,19 @@ export function removeSkill(skillPath: string, skillId: string, skillName: strin
     throw new Error(`Failed to remove skill: ${err}`);
   }
 
-  // Record operation
+  // Update index to remove the skill
+  const index = loadIndex();
+  index.skills = index.skills.filter(s => s.id !== skillId);
+  saveIndex(index);
+
+  // Record operation with original path
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes
   const operation: Operation = {
     id: `op-${Date.now()}`,
     type: 'remove',
     skillId,
     skillName,
+    originalPath: skillPath,
     backupPath,
     timestamp: new Date().toISOString(),
     expiresAt,
@@ -76,6 +82,7 @@ export function restoreSkill(skillId: string): void {
 
   const latestOp = operations[0];
   const backupPath = latestOp.backupPath;
+  const originalPath = latestOp.originalPath;
 
   if (!fs.existsSync(backupPath)) {
     console.log(`❌ Backup not found: ${backupPath}`);
@@ -83,24 +90,21 @@ export function restoreSkill(skillId: string): void {
     process.exit(1);
   }
 
-  // Determine original source path
-  const index = loadIndex();
-  const skill = index.skills.find(s => s.id === skillId);
-  if (!skill) {
-    console.log(`❌ Skill ${skillId} not found in index. Cannot determine restore location.`);
-    process.exit(1);
-  }
-
-  // Restore
+  // Restore to original path
   try {
-    fs.mkdirSync(path.dirname(skill.path), { recursive: true });
-    execSync(`cp -r "${backupPath}" "${skill.path}"`, { stdio: 'pipe' });
+    fs.mkdirSync(path.dirname(originalPath), { recursive: true });
+    execSync(`cp -r "${backupPath}" "${originalPath}"`, { stdio: 'pipe' });
   } catch (err) {
     throw new Error(`Failed to restore skill: ${err}`);
   }
 
-  console.log(`✅ Restored: ${skill.name}`);
-  console.log(`   Location: ${skill.path}`);
+  console.log(`✅ Restored: ${latestOp.skillName}`);
+  console.log(`   Location: ${originalPath}`);
+
+  // Remove the operation since it was undone
+  const allOps = loadOperations();
+  const updatedOps = allOps.filter(op => op.id !== latestOp.id);
+  saveOperations(updatedOps);
 }
 
 export function cleanExpiredTrash(): number {

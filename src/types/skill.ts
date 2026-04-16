@@ -21,6 +21,7 @@ export interface Operation {
   type: 'remove' | 'disable' | 'enable';
   skillId: string;
   skillName: string;
+  originalPath: string;
   backupPath: string;
   timestamp: string;
   expiresAt: string;

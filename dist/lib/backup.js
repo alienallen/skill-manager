@@ -80,13 +80,18 @@ function removeSkill(skillPath, skillId, skillName, force = false) {
     catch (err) {
         throw new Error(`Failed to remove skill: ${err}`);
     }
-    // Record operation
+    // Update index to remove the skill
+    const index = (0, store_1.loadIndex)();
+    index.skills = index.skills.filter(s => s.id !== skillId);
+    (0, store_1.saveIndex)(index);
+    // Record operation with original path
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes
     const operation = {
         id: `op-${Date.now()}`,
         type: 'remove',
         skillId,
         skillName,
+        originalPath: skillPath,
         backupPath,
         timestamp: new Date().toISOString(),
         expiresAt,
@@ -104,28 +109,26 @@ function restoreSkill(skillId) {
     }
     const latestOp = operations[0];
     const backupPath = latestOp.backupPath;
+    const originalPath = latestOp.originalPath;
     if (!fs.existsSync(backupPath)) {
         console.log(`❌ Backup not found: ${backupPath}`);
         console.log(`   The backup may have expired or been manually deleted.`);
         process.exit(1);
     }
-    // Determine original source path
-    const index = (0, store_1.loadIndex)();
-    const skill = index.skills.find(s => s.id === skillId);
-    if (!skill) {
-        console.log(`❌ Skill ${skillId} not found in index. Cannot determine restore location.`);
-        process.exit(1);
-    }
-    // Restore
+    // Restore to original path
     try {
-        fs.mkdirSync(path.dirname(skill.path), { recursive: true });
-        (0, child_process_1.execSync)(`cp -r "${backupPath}" "${skill.path}"`, { stdio: 'pipe' });
+        fs.mkdirSync(path.dirname(originalPath), { recursive: true });
+        (0, child_process_1.execSync)(`cp -r "${backupPath}" "${originalPath}"`, { stdio: 'pipe' });
     }
     catch (err) {
         throw new Error(`Failed to restore skill: ${err}`);
     }
-    console.log(`✅ Restored: ${skill.name}`);
-    console.log(`   Location: ${skill.path}`);
+    console.log(`✅ Restored: ${latestOp.skillName}`);
+    console.log(`   Location: ${originalPath}`);
+    // Remove the operation since it was undone
+    const allOps = (0, store_1.loadOperations)();
+    const updatedOps = allOps.filter(op => op.id !== latestOp.id);
+    (0, store_1.saveOperations)(updatedOps);
 }
 function cleanExpiredTrash() {
     ensureTrashDir();

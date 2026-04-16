@@ -47,6 +47,7 @@ function formatList(skills, options) {
             const disabledMarker = !skill.enabled ? ' [disabled]' : '';
             const name = skill.name || skill.id.split(':')[1];
             console.log(`  ${name}${symlinkMarker}${disabledMarker}`);
+            console.log(`    ID: ${skill.id}`);
             if (skill.description) {
                 console.log(`    ${truncate(skill.description, 60)}`);
             }

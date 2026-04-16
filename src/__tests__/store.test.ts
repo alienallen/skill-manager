@@ -76,6 +76,7 @@ describe('Store', () => {
           type: 'remove',
           skillId: 'test:skill-1',
           skillName: 'Test Skill 1',
+          originalPath: '/Users/test/.claude/skills/test-skill',
           backupPath: '/tmp/backup',
           timestamp: '2026-04-15T10:00:00Z',
           expiresAt: '2026-04-15T10:30:00Z'

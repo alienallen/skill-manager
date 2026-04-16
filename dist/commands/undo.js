@@ -23,11 +23,9 @@ function createUndoCommand() {
         }
         console.log(`\n🔄 Undoing: ${op.type} of ${op.skillName}`);
         console.log(`   Removed at: ${op.timestamp}`);
-        // Perform restore
+        // Perform restore (it will remove the operation from the list)
         try {
             (0, backup_1.restoreSkill)(op.skillId);
-            // Remove the operation since it was undone
-            (0, store_1.saveOperations)(operations.slice(1));
             console.log('\n✅ Undo complete.');
         }
         catch (err) {
