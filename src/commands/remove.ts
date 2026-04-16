@@ -128,5 +128,6 @@ export function createRemoveCommand(): Command {
       }
 
       removeSkill(skill.path, skill.id, skill.name, options.force);
+      process.exit(0);
     });
 }

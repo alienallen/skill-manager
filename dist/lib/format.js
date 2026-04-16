@@ -40,25 +40,22 @@ function formatList(skills, options) {
     for (const [source, sourceSkills] of Object.entries(grouped)) {
         const icon = SOURCE_ICONS[source] || '⚪';
         const label = SOURCE_LABELS[source] || source;
-        console.log(`${icon} ${label} (${sourceSkills.length})`);
-        console.log('─'.repeat(50));
+        console.log(`\n${icon} ${label} (${sourceSkills.length})`);
+        console.log('─'.repeat(60));
         for (const skill of sourceSkills) {
             const symlinkMarker = skill.isSymlink ? ' 🔗' : '';
             const disabledMarker = !skill.enabled ? ' [disabled]' : '';
             const name = skill.name || skill.id.split(':')[1];
-            console.log(`  ${name}${symlinkMarker}${disabledMarker}`);
-            console.log(`    ID: ${skill.id}`);
-            if (skill.description) {
-                console.log(`    ${truncate(skill.description, 60)}`);
-            }
+            const desc = skill.description ? truncate(skill.description, 45) : '';
+            console.log(`  ${name}${symlinkMarker}${disabledMarker}  [${skill.id}]  ${desc}`);
         }
-        console.log('');
     }
+    console.log('');
 }
 function truncate(str, maxLen) {
     if (str.length <= maxLen)
         return str;
-    return str.slice(0, maxLen - 3) + '...';
+    return str.slice(0, maxLen - 1) + '…';
 }
 function formatSkillDetail(skill) {
     console.log(`\n${skill.name || skill.id}`);

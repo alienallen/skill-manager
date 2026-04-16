@@ -115,6 +115,7 @@ function createRemoveCommand() {
             }
         }
         (0, backup_1.removeSkill)(skill.path, skill.id, skill.name, options.force);
+        process.exit(0);
     });
 }
 //# sourceMappingURL=remove.js.map
