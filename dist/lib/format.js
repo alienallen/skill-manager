@@ -43,11 +43,13 @@ function formatList(skills, options) {
         console.log(`\n${icon} ${label} (${sourceSkills.length})`);
         console.log('─'.repeat(60));
         for (const skill of sourceSkills) {
-            const symlinkMarker = skill.isSymlink ? ' 🔗' : '';
-            const disabledMarker = !skill.enabled ? ' [disabled]' : '';
+            const symlinkMarker = skill.isSymlink ? '🔗' : '';
+            const disabledMarker = !skill.enabled ? '[disabled]' : '';
             const name = skill.name || skill.id.split(':')[1];
-            const desc = skill.description ? truncate(skill.description, 45) : '';
-            console.log(`  ${name}${symlinkMarker}${disabledMarker}  [${skill.id}]  ${desc}`);
+            const skillId = skill.id;
+            const desc = skill.description ? truncate(skill.description, 35) : '';
+            const markers = [symlinkMarker, disabledMarker].filter(Boolean).join(' ');
+            console.log(`  ${name.padEnd(22)} ${markers.padEnd(12)} ${skillId.padEnd(28)} ${desc}`);
         }
     }
     console.log('');

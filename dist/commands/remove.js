@@ -50,10 +50,49 @@ async function selectSkill(skills) {
 function createRemoveCommand() {
     return new commander_1.Command('remove')
         .description('Remove a skill (with backup)')
-        .argument('<skill-id-or-name>', 'Skill ID (e.g., claude:code-review) or name')
+        .argument('[skill-id-or-name]', 'Skill ID (e.g., claude:code-review) or name')
         .option('-f, --force', 'Skip safety checks for confirmation')
+        .option('--claude', 'Remove all Claude Code skills')
+        .option('--codex', 'Remove all Codex skills')
+        .option('--openclaw', 'Remove all OpenClaw skills')
+        .option('--agents', 'Remove all shared/agents skills')
         .action(async (skillIdOrName, options) => {
         const index = (0, store_1.loadIndex)();
+        // Batch removal by source
+        if (options.claude || options.codex || options.openclaw || options.agents) {
+            const sourceMap = {
+                claude: 'claude',
+                codex: 'codex',
+                openclaw: 'openclaw',
+                agents: 'agents',
+            };
+            const source = sourceMap[Object.keys(options).find(k => ['claude', 'codex', 'openclaw', 'agents'].includes(k))];
+            const skillsToRemove = index.skills.filter(s => s.source === source);
+            if (skillsToRemove.length === 0) {
+                console.log(`No skills found for source: ${source}`);
+                process.exit(0);
+            }
+            console.log(`\n⚠️  About to remove ${skillsToRemove.length} skills from ${source}:`);
+            skillsToRemove.forEach(s => console.log(`   - ${s.name} (${s.id})`));
+            console.log('\nThis will backup ALL skills before removal.');
+            if (!options.force) {
+                const confirmed = await promptConfirm('Press Enter to confirm or Ctrl+C to cancel...');
+                if (!confirmed) {
+                    console.log('Cancelled.');
+                    process.exit(0);
+                }
+            }
+            for (const skill of skillsToRemove) {
+                (0, backup_1.removeSkill)(skill.path, skill.id, skill.name, true);
+            }
+            console.log(`\n✅ Removed ${skillsToRemove.length} skills from ${source}`);
+            process.exit(0);
+        }
+        // Single skill removal (existing logic)
+        if (!skillIdOrName) {
+            console.log('❌ Please provide a skill ID/name or use --claude/--codex/--openclaw/--agents to remove all');
+            process.exit(1);
+        }
         // Try to find by exact ID first
         let skill = index.skills.find(s => s.id === skillIdOrName);
         let matchedBy = 'ID';

@@ -1,1 +1,1 @@
-{"version":3,"file":"remove.d.ts","sourceRoot":"","sources":["../../src/commands/remove.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAkDpC,wBAAgB,mBAAmB,IAAI,OAAO,CAkF7C"}
+{"version":3,"file":"remove.d.ts","sourceRoot":"","sources":["../../src/commands/remove.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAkDpC,wBAAgB,mBAAmB,IAAI,OAAO,CA8H7C"}
