@@ -8,6 +8,7 @@ const remove_1 = require("./commands/remove");
 const restore_1 = require("./commands/restore");
 const enable_1 = require("./commands/enable");
 const undo_1 = require("./commands/undo");
+const merge_1 = require("./commands/merge");
 const program = new commander_1.Command();
 program
     .name('skillman')
@@ -20,6 +21,7 @@ program.addCommand((0, restore_1.createRestoreCommand)());
 program.addCommand((0, enable_1.createEnableCommand)());
 program.addCommand((0, enable_1.createDisableCommand)());
 program.addCommand((0, undo_1.createUndoCommand)());
+program.addCommand((0, merge_1.createMergeCommand)());
 // Default command - show help if no arguments
 if (process.argv.length === 2) {
     program.parse(['node', 'skillman', '--help']);

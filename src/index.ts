@@ -7,6 +7,7 @@ import { createRemoveCommand } from './commands/remove';
 import { createRestoreCommand } from './commands/restore';
 import { createEnableCommand, createDisableCommand } from './commands/enable';
 import { createUndoCommand } from './commands/undo';
+import { createMergeCommand } from './commands/merge';
 
 const program = new Command();
 
@@ -22,6 +23,7 @@ program.addCommand(createRestoreCommand());
 program.addCommand(createEnableCommand());
 program.addCommand(createDisableCommand());
 program.addCommand(createUndoCommand());
+program.addCommand(createMergeCommand());
 
 // Default command - show help if no arguments
 if (process.argv.length === 2) {

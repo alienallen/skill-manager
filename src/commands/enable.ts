@@ -1,8 +1,23 @@
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { loadIndex, saveIndex, addOperation } from '../lib/store';
-import { Operation } from '../types/skill';
+import { loadIndex, saveIndex } from '../lib/store';
+
+function isSymlink(targetPath: string): boolean {
+  try {
+    return fs.lstatSync(targetPath).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+function getRealPath(symlinkPath: string): string {
+  try {
+    return fs.readlinkSync(symlinkPath);
+  } catch {
+    return symlinkPath;
+  }
+}
 
 export function createEnableCommand(): Command {
   return new Command('enable')
@@ -22,17 +37,44 @@ export function createEnableCommand(): Command {
         return;
       }
 
-      // Move from disabled directory back to enabled
-      const disabledPath = skill.path;
-      const enabledPath = disabledPath.replace('.disabled', '');
+      const skillPath = skill.path;
+      const isSym = isSymlink(skillPath);
 
       try {
-        fs.renameSync(disabledPath, enabledPath);
-        skill.path = enabledPath;
-        skill.enabled = true;
-        saveIndex(index);
+        if (isSym) {
+          // Handle symlink: enable the real .disabled version
+          const realPath = getRealPath(skillPath);
+          const disabledRealPath = realPath + '.disabled';
+          const enabledRealPath = realPath.replace(new RegExp('\\.disabled$'), '');
 
-        console.log(`✅ Enabled: ${skill.name}`);
+          if (!fs.existsSync(disabledRealPath)) {
+            console.log(`❌ Disabled version not found: ${disabledRealPath}`);
+            process.exit(1);
+          }
+
+          // Rename .disabled version back
+          fs.renameSync(disabledRealPath, enabledRealPath);
+
+          // Remove old symlink and create new one pointing to enabled version
+          fs.unlinkSync(skillPath);
+          const relativePath = path.relative(path.dirname(skillPath), enabledRealPath);
+          fs.symlinkSync(relativePath, skillPath);
+
+          skill.path = skillPath.replace(/\.disabled$/, '');
+          skill.enabled = true;
+          saveIndex(index);
+
+          console.log(`✅ Enabled: ${skill.name} (shared skill)`);
+        } else {
+          // Handle regular directory
+          const enabledPath = skillPath.replace('.disabled', '');
+          fs.renameSync(skillPath, enabledPath);
+          skill.path = enabledPath;
+          skill.enabled = true;
+          saveIndex(index);
+
+          console.log(`✅ Enabled: ${skill.name}`);
+        }
       } catch (err) {
         console.error(`❌ Failed to enable skill: ${err}`);
         process.exit(1);
@@ -58,17 +100,48 @@ export function createDisableCommand(): Command {
         return;
       }
 
-      // Move to disabled directory
-      const disabledPath = skill.path + '.disabled';
+      const skillPath = skill.path;
+      const isSym = isSymlink(skillPath);
 
       try {
-        fs.renameSync(skill.path, disabledPath);
-        skill.path = disabledPath;
-        skill.enabled = false;
-        saveIndex(index);
+        if (isSym) {
+          // Handle symlink: disable the real directory
+          const realPath = getRealPath(skillPath);
+          const skillName = path.basename(skillPath);
+          const disabledRealPath = path.join(path.dirname(realPath), '.disabled', skillName);
 
-        console.log(`✅ Disabled: ${skill.name}`);
-        console.log(`   Run "skillman enable ${skillId}" to re-enable.`);
+          // Create .disabled directory if needed
+          const disabledDir = path.join(path.dirname(realPath), '.disabled');
+          if (!fs.existsSync(disabledDir)) {
+            fs.mkdirSync(disabledDir, { recursive: true });
+          }
+
+          // Move real directory to .disabled
+          fs.renameSync(realPath, disabledRealPath);
+
+          // Remove old symlink
+          fs.unlinkSync(skillPath);
+
+          // Create new symlink pointing to .disabled version
+          const relativePath = path.relative(path.dirname(skillPath), disabledRealPath);
+          fs.symlinkSync(relativePath, skillPath);
+
+          // Update index to reflect the new symlink path (which still ends with .disabled)
+          skill.enabled = false;
+          saveIndex(index);
+
+          console.log(`✅ Disabled: ${skill.name} (shared skill)`);
+          console.log(`   ⚠️  This affects all tools using this shared skill.`);
+        } else {
+          // Handle regular directory
+          const disabledPath = skillPath + '.disabled';
+          fs.renameSync(skillPath, disabledPath);
+          skill.path = disabledPath;
+          skill.enabled = false;
+          saveIndex(index);
+
+          console.log(`✅ Disabled: ${skill.name}`);
+        }
       } catch (err) {
         console.error(`❌ Failed to disable skill: ${err}`);
         process.exit(1);
